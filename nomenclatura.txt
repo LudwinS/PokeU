@@ -1,0 +1,9 @@
+Esto es para definir una nomenclatura y evitar confuciones
+
+movimiento
+tipo
+daño
+calcularDaño
+pokemon
+pokedex
+entrenador
