@@ -1,0 +1,14 @@
+En este proyecto buscamos crear un juego de pokemon basado en 
+la universidad.
+
+El programa debera de tener movimiento, se usara la libreria
+Arcade de python, ademas de que debera ser modular, para tener 
+un mejor orden, el programa debera tener funciones como la de 
+combate, estadisticas de los pokemon ademas de integrar una 
+pokedex.
+
+Esta aplicacion se esta desarrollando con el objetvo de hacer 
+mas amenos los espacios entre clases de los estudiantes, ya 
+que nos hemos percatado que hay muchos que tienen grandes bloques
+libres entre clases y hay veces en las que se la pueden llegar 
+a pasar muy aburridos.
