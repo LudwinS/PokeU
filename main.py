@@ -6,6 +6,8 @@ from email.message import EmailMessage
 import os
 from dotenv import load_dotenv
 
+from arcade.gui.experimental.password_input import UIPasswordInput
+
 from auth_db import (
     init_db,
     register_user,
@@ -233,13 +235,16 @@ class LoginView(arcade.View):
         center_y = SCREEN_HEIGHT // 2
 
         # ===== Inputs =====
-        self.email_input = arcade.gui.UIInputText(
+        # Ahora pedimos NOMBRE DE USUARIO (perfil), no correo
+        self.username_input = arcade.gui.UIInputText(
             x=SCREEN_WIDTH // 2 - 150,
             y=center_y + 35,
             width=300,
             text=""
         )
-        self.password_input = arcade.gui.UIInputText(
+
+        # Campo de contraseña oculto con asteriscos
+        self.password_input = UIPasswordInput(
             x=SCREEN_WIDTH // 2 - 150,
             y=center_y - 30,
             width=300,
@@ -247,8 +252,8 @@ class LoginView(arcade.View):
         )
 
         # Labels
-        email_label = arcade.gui.UILabel(
-            text="Correo Gmail:",
+        username_label = arcade.gui.UILabel(
+            text="Usuario (nombre de perfil):",
             x=SCREEN_WIDTH // 2 - 150,
             y=center_y + 70,
         )
@@ -285,8 +290,8 @@ class LoginView(arcade.View):
         )
 
         # Agregar al UIManager
-        self.ui_manager.add(email_label)
-        self.ui_manager.add(self.email_input)
+        self.ui_manager.add(username_label)
+        self.ui_manager.add(self.username_input)
         self.ui_manager.add(password_label)
         self.ui_manager.add(self.password_input)
         self.ui_manager.add(login_button)
@@ -294,14 +299,16 @@ class LoginView(arcade.View):
         self.ui_manager.add(self.status_label)
 
     def on_click_login(self, event):
-        email = self.email_input.text.strip()
+        # Ahora usamos el nombre de perfil para loguear
+        username = self.username_input.text.strip()
         password = self.password_input.text
 
-        ok, msg, profile_name = login_user(email, password)
+        ok, msg, profile_name = login_user(username, password)
         self.status_label.text = msg
 
         if ok:
-            self.window.current_user_email = email
+            # Podrías recuperar el email si quisieras, pero por ahora solo guardamos el perfil
+            self.window.current_user_email = None
             self.window.current_profile_name = profile_name
             game_view = GameView()
             self.window.show_view(game_view)
@@ -315,10 +322,10 @@ class LoginView(arcade.View):
         draw_gradient_background()
         draw_menu_panel(
             "Login Campus UGB",
-            "Ingresa tus credenciales para comenzar la aventura",
+            "Ingresa tu usuario y contraseña para comenzar la aventura",
         )
         arcade.draw_text(
-            "Tip: Usa tu correo Gmail real para recibir el código.",
+            "¿Aún no tienes cuenta? Regístrate con tu correo Gmail.",
             SCREEN_WIDTH // 2,
             50,
             COLOR_TEXT_SOFT,
@@ -348,7 +355,7 @@ class RegisterView(arcade.View):
             width=300,
             text=""
         )
-        self.password_input = arcade.gui.UIInputText(
+        self.password_input = UIPasswordInput(
             x=SCREEN_WIDTH // 2 - 150,
             y=center_y - 30,
             width=300,
