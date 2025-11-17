@@ -1,7 +1,9 @@
+# auth_db.py
 import sqlite3
 import hashlib
 from datetime import datetime
 from typing import Optional, Tuple
+import re
 
 DB_NAME = "auth.db"
 
@@ -25,7 +27,7 @@ def init_db():
 
 # --- Utilidades ---
 
-ALLOWED_DOMAINS = ("@clasess.edu.sv", "@ugb.edu.sv")
+ALLOWED_DOMAINS = ("@gmail.com")
 
 def is_valid_email(email: str) -> bool:
     email = email.strip().lower()
@@ -37,9 +39,52 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 def is_valid_profile_name(profile_name: str) -> bool:
-    # Puedes poner tus reglas (sin espacios, longitud mínima, etc.)
     profile_name = profile_name.strip()
     return len(profile_name) >= 3
+
+def validate_password(password: str) -> Tuple[bool, str]:
+    """
+    Reglas:
+    - Mínimo 8 caracteres
+    - Al menos una mayúscula
+    - Al menos una minúscula
+    - Al menos un número
+    - Al menos un caracter especial !\"#$%&/()
+    """
+    if len(password) < 8:
+        return False, "La contraseña debe tener al menos 8 caracteres"
+
+    if not re.search(r"[A-Z]", password):
+        return False, "La contraseña debe incluir al menos una letra mayúscula"
+
+    if not re.search(r"[a-z]", password):
+        return False, "La contraseña debe incluir al menos una letra minúscula"
+
+    if not re.search(r"[0-9]", password):
+        return False, "La contraseña debe incluir al menos un número"
+
+    if not re.search(r"[!\"#$%&/()]", password):
+        return False, "La contraseña debe incluir al menos un caracter especial (!\"#$%&/())"
+
+    return True, "Contraseña válida"
+
+def email_exists(email: str) -> bool:
+    email = email.strip().lower()
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM users WHERE email = ?", (email,))
+    row = cur.fetchone()
+    conn.close()
+    return row is not None
+
+def profile_name_exists(profile_name: str) -> bool:
+    profile_name = profile_name.strip()
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT 1 FROM users WHERE profile_name = ?", (profile_name,))
+    row = cur.fetchone()
+    conn.close()
+    return row is not None
 
 # --- Funciones principales ---
 
@@ -52,10 +97,11 @@ def register_user(email: str, password: str, profile_name: str) -> Tuple[bool, s
     profile_name = profile_name.strip()
 
     if not is_valid_email(email):
-        return False, "Solo se permiten correos @clasess.edu.sv o @ugb.edu.sv"
+        return False, "Solo se permiten correos @gmail.com"
 
-    if len(password) < 4:
-        return False, "La contraseña debe tener al menos 4 caracteres"
+    ok_pass, msg_pass = validate_password(password)
+    if not ok_pass:
+        return False, msg_pass
 
     if not is_valid_profile_name(profile_name):
         return False, "El nombre de perfil debe tener al menos 3 caracteres"
@@ -63,9 +109,12 @@ def register_user(email: str, password: str, profile_name: str) -> Tuple[bool, s
     conn = get_connection()
     cur = conn.cursor()
 
-    # Verificar si ya existe ese nombre de perfil
-    cur.execute("SELECT id FROM users WHERE profile_name = ?", (profile_name,))
-    if cur.fetchone() is not None:
+    # Verificar email y perfil por si acaso (aunque ya debimos comprobar antes)
+    if email_exists(email):
+        conn.close()
+        return False, "Ya existe una cuenta con ese correo"
+
+    if profile_name_exists(profile_name):
         conn.close()
         return False, "Ese nombre de perfil ya está en uso, elige otro"
 
@@ -77,7 +126,7 @@ def register_user(email: str, password: str, profile_name: str) -> Tuple[bool, s
         conn.commit()
         return True, "Usuario registrado correctamente"
     except sqlite3.IntegrityError:
-        return False, "Ya existe una cuenta con ese correo"
+        return False, "Error al registrar usuario (correo o perfil ya en uso)"
     finally:
         conn.close()
 
@@ -103,3 +152,4 @@ def login_user(email: str, password: str) -> Tuple[bool, str, Optional[str]]:
         return True, "Inicio de sesión exitoso", profile_name
     else:
         return False, "Contraseña incorrecta", None
+    
