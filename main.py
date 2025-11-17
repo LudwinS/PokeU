@@ -524,7 +524,6 @@ class VerifyCodeView(arcade.View):
         )
 
         # Agregar al UIManager
-        self.ui_manager.add(code_label)
         self.ui_manager.add(self.code_input)
         self.ui_manager.add(verify_button)
         self.ui_manager.add(back_button)
@@ -586,7 +585,7 @@ class GameView(arcade.View):
 
         # Botón "Cerrar sesión"
         logout_button = arcade.gui.UIFlatButton(
-            text="🚪 Cerrar sesión",
+            text="ಥ_ಥ Cerrar sesión",
             width=200,
             x=SCREEN_WIDTH // 2 - 100,
             y=center_y - 70,
