@@ -27,7 +27,7 @@ def init_db():
 
 # --- Utilidades ---
 
-ALLOWED_DOMAINS = ("@gmail.com")
+ALLOWED_DOMAINS = ("@gmail.com",)
 
 def is_valid_email(email: str) -> bool:
     email = email.strip().lower()
@@ -130,26 +130,29 @@ def register_user(email: str, password: str, profile_name: str) -> Tuple[bool, s
     finally:
         conn.close()
 
-def login_user(email: str, password: str) -> Tuple[bool, str, Optional[str]]:
+def login_user(profile_name: str, password: str) -> Tuple[bool, str, Optional[str]]:
     """
-    Intenta iniciar sesión.
+    Intenta iniciar sesión usando NOMBRE DE PERFIL (usuario) y contraseña.
     Devuelve (ok, mensaje, profile_name_o_None).
     Si ok=True, profile_name tendrá el nombre del perfil.
     """
-    email = email.strip().lower()
+    profile_name = profile_name.strip()
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT password_hash, profile_name FROM users WHERE email = ?", (email,))
+    # Ahora buscamos por profile_name, NO por email
+    cur.execute(
+        "SELECT password_hash, profile_name FROM users WHERE profile_name = ?",
+        (profile_name,)
+    )
     row = cur.fetchone()
     conn.close()
 
     if row is None:
-        return False, "No existe una cuenta con ese correo", None
+        return False, "No existe una cuenta con ese usuario", None
 
-    stored_hash, profile_name = row
+    stored_hash, stored_profile = row
     if stored_hash == hash_password(password):
-        return True, "Inicio de sesión exitoso", profile_name
+        return True, "Inicio de sesión exitoso", stored_profile
     else:
         return False, "Contraseña incorrecta", None
-    

@@ -6,6 +6,8 @@ from email.message import EmailMessage
 import os
 from dotenv import load_dotenv
 
+from arcade.gui.experimental.password_input import UIPasswordInput
+
 from auth_db import (
     init_db,
     register_user,
@@ -233,38 +235,40 @@ class LoginView(arcade.View):
         center_y = SCREEN_HEIGHT // 2
 
         # ===== Inputs =====
-        # Más separados del subtítulo
-        self.email_input = arcade.gui.UIInputText(
+        # Ahora pedimos NOMBRE DE USUARIO (perfil), no correo
+        self.username_input = arcade.gui.UIInputText(
             x=SCREEN_WIDTH // 2 - 150,
-            y=center_y + 35,   # antes: +55
+            y=center_y + 35,
             width=300,
             text=""
         )
-        self.password_input = arcade.gui.UIInputText(
+
+        # Campo de contraseña oculto con asteriscos
+        self.password_input = UIPasswordInput(
             x=SCREEN_WIDTH // 2 - 150,
-            y=center_y - 30,   # antes: -15
+            y=center_y - 30,
             width=300,
             text=""
         )
 
         # Labels
-        email_label = arcade.gui.UILabel(
-            text="Correo Gmail:",
+        username_label = arcade.gui.UILabel(
+            text="Usuario (nombre de perfil):",
             x=SCREEN_WIDTH // 2 - 150,
-            y=center_y + 70,   # antes: +85 (quedaba casi sobre el subtítulo)
+            y=center_y + 70,
         )
         password_label = arcade.gui.UILabel(
             text="Contraseña:",
             x=SCREEN_WIDTH // 2 - 150,
-            y=center_y + 5,    # antes: +15
+            y=center_y + 5,
         )
 
-        # Botones (también un poco más abajo para mantener proporción)
+        # Botones
         login_button = arcade.gui.UIFlatButton(
             text="⚡ Iniciar sesión",
             width=200,
             x=SCREEN_WIDTH // 2 - 100,
-            y=center_y - 80,   # antes: -65
+            y=center_y - 80,
         )
         login_button.on_click = self.on_click_login
 
@@ -272,7 +276,7 @@ class LoginView(arcade.View):
             text="¿Nuevo entrenador? Regístrate",
             width=260,
             x=SCREEN_WIDTH // 2 - 130,
-            y=center_y - 130,  # antes: -115
+            y=center_y - 130,
         )
         register_link_button.on_click = self.on_click_go_to_register
 
@@ -280,30 +284,31 @@ class LoginView(arcade.View):
         self.status_label = arcade.gui.UILabel(
             text="",
             x=SCREEN_WIDTH // 2 - 240,
-            y=center_y - 180,   # antes: -165
+            y=center_y - 180,
             width=480,
             multiline=True,
         )
 
         # Agregar al UIManager
-        self.ui_manager.add(email_label)
-        self.ui_manager.add(self.email_input)
+        self.ui_manager.add(username_label)
+        self.ui_manager.add(self.username_input)
         self.ui_manager.add(password_label)
         self.ui_manager.add(self.password_input)
         self.ui_manager.add(login_button)
         self.ui_manager.add(register_link_button)
         self.ui_manager.add(self.status_label)
 
-
     def on_click_login(self, event):
-        email = self.email_input.text.strip()
+        # Ahora usamos el nombre de perfil para loguear
+        username = self.username_input.text.strip()
         password = self.password_input.text
 
-        ok, msg, profile_name = login_user(email, password)
+        ok, msg, profile_name = login_user(username, password)
         self.status_label.text = msg
 
         if ok:
-            self.window.current_user_email = email
+            # Podrías recuperar el email si quisieras, pero por ahora solo guardamos el perfil
+            self.window.current_user_email = None
             self.window.current_profile_name = profile_name
             game_view = GameView()
             self.window.show_view(game_view)
@@ -317,10 +322,10 @@ class LoginView(arcade.View):
         draw_gradient_background()
         draw_menu_panel(
             "Login Campus UGB",
-            "Ingresa tus credenciales para comenzar la aventura",
+            "Ingresa tu usuario y contraseña para comenzar la aventura",
         )
         arcade.draw_text(
-            "Tip: Usa tu correo Gmail real para recibir el código.",
+            "¿Aún no tienes cuenta? Regístrate con tu correo Gmail.",
             SCREEN_WIDTH // 2,
             50,
             COLOR_TEXT_SOFT,
@@ -343,14 +348,14 @@ class RegisterView(arcade.View):
         self.pending_password = None
         self.pending_profile = None
 
-        # ===== Inputs con más espacio =====
+        # ===== Inputs =====
         self.email_input = arcade.gui.UIInputText(
             x=SCREEN_WIDTH // 2 - 150,
             y=center_y + 35,
             width=300,
             text=""
         )
-        self.password_input = arcade.gui.UIInputText(
+        self.password_input = UIPasswordInput(
             x=SCREEN_WIDTH // 2 - 150,
             y=center_y - 30,
             width=300,
@@ -399,7 +404,7 @@ class RegisterView(arcade.View):
         )
         back_button.on_click = self.on_click_back
 
-        # Mensaje de estado (al borde inferior del panel, sin tocar botones)
+        # Mensaje de estado
         self.status_label = arcade.gui.UILabel(
             text="",
             x=SCREEN_WIDTH // 2 - 240,
@@ -490,21 +495,13 @@ class VerifyCodeView(arcade.View):
         self.pending_password = password
         self.pending_profile = profile
 
-        # Input para código (más centrado y con espacio)
+
+        # Input para código
         self.code_input = arcade.gui.UIInputText(
             x=SCREEN_WIDTH // 2 - 150,
             y=center_y + 45,
             width=300,
             text=""
-        )
-
-        # Labels
-        code_label = arcade.gui.UILabel(
-            text="Código de verificación (revisa tu correo):",
-            x=SCREEN_WIDTH // 2 - 150,
-            y=center_y + 80,
-            width=350,
-            multiline=True,
         )
 
         # Botones
@@ -524,7 +521,7 @@ class VerifyCodeView(arcade.View):
         )
         back_button.on_click = self.on_click_back
 
-        # Mensaje de estado, bien separadito de los botones
+        # Mensaje de estado
         self.status_label = arcade.gui.UILabel(
             text="",
             x=SCREEN_WIDTH // 2 - 240,
@@ -534,7 +531,6 @@ class VerifyCodeView(arcade.View):
         )
 
         # Agregar al UIManager
-        self.ui_manager.add(code_label)
         self.ui_manager.add(self.code_input)
         self.ui_manager.add(verify_button)
         self.ui_manager.add(back_button)
@@ -585,7 +581,7 @@ class GameView(arcade.View):
 
         center_y = SCREEN_HEIGHT // 2
 
-        # Botón "Comenzar" (queda centrado respecto al panel)
+        # Botón "Comenzar"
         start_button = arcade.gui.UIFlatButton(
             text="🐦‍🔥 Comenzar aventura",
             width=230,
@@ -596,7 +592,7 @@ class GameView(arcade.View):
 
         # Botón "Cerrar sesión"
         logout_button = arcade.gui.UIFlatButton(
-            text="🚪 Cerrar sesión",
+            text="ಥ_ಥ Cerrar sesión",
             width=200,
             x=SCREEN_WIDTH // 2 - 100,
             y=center_y - 70,
@@ -652,7 +648,6 @@ class GameView(arcade.View):
             20,
             anchor_x="center",
         )
-
 
         # Barra decorativa
         draw_centered_rect_filled(
